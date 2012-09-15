@@ -1,0 +1,140 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+   <!--jQuery References-->
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js" type="text/javascript"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js" type="text/javascript"></script>
+
+    <!--Theme-->
+   <link href="http://cdn.wijmo.com/themes/rocket/jquery-wijmo.css" rel="stylesheet" type="text/css" title="rocket-jqueryui" />
+
+    <!--Wijmo Widgets CSS-->
+    <link href="http://cdn.wijmo.com/jquery.wijmo-complete.all.2.2.1.min.css" rel="stylesheet" type="text/css" />
+    
+    <!--Wijmo Widgets JavaScript-->
+    <script src="http://cdn.wijmo.com/jquery.wijmo-open.all.2.2.1.min.js" type="text/javascript"></script>
+    <script src="http://cdn.wijmo.com/jquery.wijmo-complete.all.2.2.1.min.js" type="text/javascript"></script>
+    <script src="http://cdn.wijmo.com/external/knockout-2.1.0.js" type="text/javascript"></script>          
+    <script src="http://cdn.wijmo.com/external/knockout.wijmo.js" type="text/javascript"></script>              
+
+    <!--Globalize Cultures-->
+    <script src="http://cdn.wijmo.com/external/cultures/globalize.cultures.js" type="text/javascript"></script>
+
+    <script src="WijLineChartCursor.js"></script>
+                
+    <script id="scriptInit" type="text/javascript">
+        $(document).ready(function () {
+
+            var theData = [
+                { x: 1, Stuff: 23, "Other Stuff": 15 },
+                { x: 2, Stuff: 58, "Other Stuff": 14 },
+                { x: 3, Stuff: 19, "Other Stuff": 19 },
+                { x: 5, Stuff: 33, "Other Stuff": 25 },
+                { x: 6, Stuff: 47, "Other Stuff": 63 },
+                { x: 7, Stuff: 39, "Other Stuff": 59 },
+                { x: 11, Stuff: 33, "Other Stuff": 53 },
+                { x: 12, Stuff: 45, "Other Stuff": 2 },
+                { x: 13, Stuff: 30, "Other Stuff": 30 },
+                { x: 14, Stuff: 63, "Other Stuff": 27 },
+                { x: 15, Stuff: 47, "Other Stuff": 22 },
+                { x: 16, Stuff: 23, "Other Stuff": 20 },
+                { x: 17, Stuff: 34, "Other Stuff": 1 }
+            ];
+
+            var seriesList = [{
+                type: "line",
+                fitType: "spline",  // line, spline, or bezier
+                label: "Stuff",
+                legendEntry: true,
+                data: { x: { bind: "x" }, y: { bind: "Stuff"} },
+                markers: {
+                    visible: false,
+                    type: "circle"
+                }
+            }, {
+                type: "line",
+                fitType: "spline",  // line, spline, or bezier
+                label: "Other Stuff",
+                legendEntry: true,
+                data: { x: { bind: "x" }, y: { bind: "Other Stuff"} },
+                markers: {
+                    visible: false,
+                    type: "circle"
+                }
+            }];
+
+            $("#wijlinechartcursordemo").wijlinechartcursor({
+                dataSource: theData,
+                axis: {
+                    y: {
+                        text: ""
+                    },
+                    x: {
+                        text: ""
+                    }
+                },
+                seriesList: seriesList,
+                animation: { direction: "vertical", duration: 500, enabled: true },
+                showChartLabels: false,
+                hint: {
+                    enable: false, // Change to true to show the callout tooltip.
+                    content: function () {
+                        return this.data.lineSeries.label + '\n' + this.x + '\n' + this.y + '';
+                    }
+                }
+            });
+
+            $(window).resize(function () {
+                $("#wijlinechartcursordemo").data().wijlinechartcursor.redraw(false);
+            });
+
+            $("#checkboxMarkers").on("click", function (event) {
+                var self = this;
+                $.each(seriesList, function (index, seriesOptions) {
+                    seriesOptions.markers.visible = self.checked;
+                });
+                $("#wijlinechartcursordemo").wijlinechartcursor({ seriesList: seriesList });
+            });
+
+            $("#checkboxChartLabels").on("click", function (event) {
+                $("#wijlinechartcursordemo").wijlinechartcursor({ showChartLabels: this.checked });
+            });
+
+            var viewModel = {
+                showPositionCursor: ko.observable(false),
+                positionCursor: null,
+                positionIndex: 0,
+                chart: $("#wijlinechartcursordemo").data().wijlinechartcursor,
+
+                onTogglePositionCursor: function () {
+                    if (this.showPositionCursor()) {
+                        this.positionCursor = this.chart.showPositionCursor(this.positionIndex);
+                    }
+                    else {
+                        this.chart.hidePositionCursor(this.positionCursor);
+                        this.positionCursor = null; // TODO : What about destroying this?
+                        positionIndex = 0;
+                    }
+                    return true;
+                },
+
+                onAdvancePositionCursor: function () {
+                    if (++this.positionIndex >= theData.length) {
+                        this.positionIndex = 0;
+                    }
+                    this.chart.showPositionCursor(this.positionIndex, this.positionCursor);
+                }
+            };
+            ko.applyBindings(viewModel);
+        });
+    </script>
+</head>
+<body class="demo-single">
+    <div id="wijlinechartcursordemo" class="ui-widget ui-widget-content ui-corner-all" style="width: 100%; height: 475px"></div>
+    <label><input id="checkboxMarkers" type="checkbox" data-bind="wijcheckbox: {}"/><span>Show data point markers</span></label>
+    <label><input id="checkboxChartLabels" type="checkbox" data-bind="wijcheckbox: {}"/><span>Show data point values</span></label>
+    <label><input id="checkboxShowPositionCursor" type="checkbox" data-bind="wijcheckbox: {checked: showPositionCursor}, click: onTogglePositionCursor"/><span>Show position cursor</span></label>
+    <button id="buttonAdvance" data-bind="button: {disabled: !showPositionCursor()}, click: onAdvancePositionCursor" >Advance</button>
+</body>
+</html>
